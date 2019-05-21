@@ -16,6 +16,7 @@ data = ps.pdio.read_files(shp_path)
 #clean up data by renaming columns 
 data = data.rename(columns={'0est_res_p':'estimated_pop','1os_brn_po':'os_born','2pop_densi':'pop_density'})
 
+#FUNCTION
 def HotspotsSyd(var):
     """
     Function that conducts a hotspot anaylsis for a certain variable in the Greater Sydney region, 
@@ -25,28 +26,31 @@ def HotspotsSyd(var):
                 'os_born' (% residents born overseas)
                 'pop_density' (population density)
     """
+    #create spatial weights for different SA2 areas using queen contiguity 
     W = ps.queen_from_shapefile(shp_path)
     W.transform = 'r'
     
+    #calculate spatial lag
     milag = ps.lag_spatial(W, data[var])
     milagQ10 = ps.Quantiles(milag, k=10)
     
+    #data
     mi = data[var]
     
+    #calculate the Global Moran's I for the variable
     I_mi = ps.Moran(data[var].values, W)
     
+    #calculate local moran's with pysal
     LMo_mi = ps.Moran_Local(data[var].values, W, permutations=9999)
+    #spatial lag values
     Lag_mi = ps.lag_spatial(W, data[var].values)
     
-    W_sigs = Lag_mi[LMo_mi.p_sim <= 0.001]
-
-    insigs = mi[LMo_mi.p_sim > .001]
-    W_insigs = Lag_mi[LMo_mi.p_sim > 0.001]
-    
+    #define significant values, hotspots & coldspots
     sig = LMo_mi.p_sim < 0.05
     hotspots = LMo_mi.q==1 *sig
     coldspots = LMo_mi.q==3 *sig
     
+    #plot on map
     from matplotlib import colors
     tx = gpd.read_file(shp_path) 
     hcmap = colors.ListedColormap(['#ebece8', '#f15362', '#aac1bf'])
