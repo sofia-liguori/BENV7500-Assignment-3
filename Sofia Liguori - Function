@@ -30,20 +30,8 @@ def HotspotsSyd(var):
     W = ps.queen_from_shapefile(shp_path)
     W.transform = 'r'
     
-    #calculate spatial lag
-    milag = ps.lag_spatial(W, data[var])
-    milagQ10 = ps.Quantiles(milag, k=10)
-    
-    #data
-    mi = data[var]
-    
-    #calculate the Global Moran's I for the variable
-    I_mi = ps.Moran(data[var].values, W)
-    
     #calculate local moran's with pysal
     LMo_mi = ps.Moran_Local(data[var].values, W, permutations=9999)
-    #spatial lag values
-    Lag_mi = ps.lag_spatial(W, data[var].values)
     
     #define significant values, hotspots & coldspots
     sig = LMo_mi.p_sim < 0.05
